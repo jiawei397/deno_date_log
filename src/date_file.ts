@@ -9,7 +9,7 @@ import {
   WriterHandler,
 } from "../deps.ts";
 import { FileHandlerOptions } from "./types.ts";
-import { expireDate, mkdir } from "./utils.ts";
+import { expireDate, mkdirSync } from "./utils.ts";
 
 export class DateFileHandler extends WriterHandler {
   protected _file: Deno.FsFile | undefined;
@@ -21,9 +21,7 @@ export class DateFileHandler extends WriterHandler {
   protected _pattern = "yyyy-MM-dd.log";
   protected _daysToKeep = 30;
   private originFileName = "";
-  protected _flushTimeout = 1000; // 1s refresh once
   protected tomorrowDay = 0;
-  private initingPromise: Promise<void> | undefined;
 
   #unloadCallback() {
     this.destroy();
@@ -49,9 +47,6 @@ export class DateFileHandler extends WriterHandler {
     if (options.daysToKeep) {
       this._daysToKeep = options.daysToKeep;
     }
-    if (options.flushTimeout !== undefined) {
-      this._flushTimeout = options.flushTimeout;
-    }
   }
 
   getTomorrow() {
@@ -63,12 +58,12 @@ export class DateFileHandler extends WriterHandler {
     return now.getTime();
   }
 
-  private async init() {
-    await this.mkdirAndremoveExpiredFiles();
-    await this.setupBuf();
+  private init() {
+    this.mkdirAndremoveExpiredFiles();
+    this.setupBuf();
   }
 
-  private async mkdirAndremoveExpiredFiles() {
+  private mkdirAndremoveExpiredFiles() {
     this.tomorrowDay = this.getTomorrow();
     let name = this.originFileName;
     let dir = "./";
@@ -76,21 +71,24 @@ export class DateFileHandler extends WriterHandler {
       const arr = name.split("/");
       name = arr.pop()!;
       dir = arr.join("/");
-      await mkdir(dir);
+      mkdirSync(dir);
     }
 
     // remove expired files
     if (this._daysToKeep > 0) {
       const ed = expireDate(this._daysToKeep);
       const expiredFileName = this.getFilenameByDate(name, ed);
-      for await (const dirEntry of Deno.readDir(dir)) {
+      for (const dirEntry of Deno.readDirSync(dir)) {
         const dirEntryName = dirEntry.name;
         if (dirEntryName.startsWith(name) && /\d+/.test(dirEntryName)) {
           if (expiredFileName > dirEntryName) {
             console.log(
               `[${dirEntryName}]Compared to [${expiredFileName}] has expired and will be deleted soon`,
             );
-            await Deno.remove(join(dir, dirEntryName));
+            const filename = join(dir, dirEntryName);
+            Deno.remove(filename).catch((err) => {
+              console.error(`remove expired file [${filename}] error:`, err);
+            });
           }
         }
       }
@@ -104,15 +102,15 @@ export class DateFileHandler extends WriterHandler {
     return filename;
   }
 
-  private async setupBuf() {
+  private setupBuf() {
     const filename = this.getFilenameByDate(this.originFileName);
-    this._file = await Deno.open(filename, this._openOptions);
+    this._file = Deno.openSync(filename, this._openOptions);
     this._writer = this._file;
     this._buf = new BufWriterSync(this._file);
   }
 
-  async setup() {
-    await this.init();
+  setup() {
+    this.init();
     addEventListener("unload", this.#unloadCallback.bind(this));
   }
 
@@ -136,27 +134,19 @@ export class DateFileHandler extends WriterHandler {
     this._file?.close();
     this._file = undefined;
     removeEventListener("unload", this.#unloadCallback);
-    return Promise.resolve();
   }
 
   private _log(msg: string): void {
-    this._buf.writeSync(this._encoder.encode(msg + "\n"));
-    setTimeout(() => {
+    if (this._encoder.encode(msg).byteLength + 1 > this._buf.available()) {
       this.flush();
-    }, this._flushTimeout);
+    }
+    this._buf.writeSync(this._encoder.encode(msg + "\n"));
   }
 
   log(msg: string): void {
     if (this.tomorrowDay <= Date.now()) { // date changed
-      if (!this.initingPromise) {
-        this.initingPromise = this.init();
-      }
-      this.initingPromise.then(() => {
-        this._log(msg);
-        this.initingPromise = undefined;
-      });
-    } else {
-      this._log(msg);
+      this.init();
     }
+    this._log(msg);
   }
 }

@@ -20,7 +20,7 @@ const config: DateFileLogConfig = {
   },
 };
 
-await initLog(config);
+initLog(config);
 
 const logger = getLogger();
 
