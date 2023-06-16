@@ -1,9 +1,8 @@
 # date_log
 
-[![deno version](https://img.shields.io/badge/deno-^1.16.2-blue?logo=deno)](https://github.com/denoland/deno)
-[![Deno](https://github.com/jiawei397/deno_lib/actions/workflows/deno.yml/badge.svg)](https://github.com/jiawei397/deno_lib/actions/workflows/deno.yml)
+[![deno version](https://img.shields.io/badge/deno-^1.34.2-blue?logo=deno)](https://github.com/denoland/deno)
 
-reference from [std log](https://deno.land/std@0.100.0/log), everyday will
+Reference from [std log](https://deno.land/std@0.191.0/log), everyday will
 generate a new log file.
 
 ## examples
@@ -29,6 +28,7 @@ const config: DateFileLogConfig = {
       "level": "DEBUG",
     },
   },
+  // "needColor": true, 
 };
 
 await initLog(config);
@@ -46,4 +46,4 @@ logger2.info("info2");
 logger2.error("error2");
 ```
 
-then will generate a log named like `deno.2021-07-12.log` in logs
+Then will generate a log named like `deno.2023-06-16.log` in logs dir.

@@ -2,11 +2,11 @@ import {
   cyan,
   dateToString,
   getLoggerOrigin,
-  handlers as Handlers,
   LevelName,
   LogRecord,
   setup,
 } from "../deps.ts";
+import { MyConsoleHandler } from "./console.ts";
 import { DateFileHandler } from "./date_file.ts";
 import {
   DateFileLogConfig,
@@ -14,6 +14,10 @@ import {
   LogLoggers,
   MyLogger,
 } from "./types.ts";
+
+export function isDist() {
+  return Deno.env.get("DENO_ENV") === "production";
+}
 
 export const getFormatter = function (needColor: boolean) {
   return function (logRecord: LogRecord) {
@@ -39,9 +43,12 @@ export function initLog(config: DateFileLogConfig) {
 
     if (appenders.includes("console")) {
       if (!handlers.console) {
-        const formatter = config.consoleFormatter || getFormatter(true);
-        handlers.console = new Handlers.ConsoleHandler(level, {
+        const needColor = config.needColor ?? !isDist();
+        const formatter = config.consoleFormatter ||
+          getFormatter(needColor);
+        handlers.console = new MyConsoleHandler(level, {
           formatter: config.consoleFormatter || formatter,
+          needColor,
         });
       }
     }

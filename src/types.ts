@@ -24,7 +24,6 @@ export interface FileHandlerOptions extends HandlerOptions {
 
   pattern?: string; // like : yyyy-MM-dd.log
   daysToKeep?: number;
-  flushTimeout?: number;
 }
 
 export type Formatter = (logRecord: LogRecord) => string;
@@ -41,6 +40,12 @@ export interface DateFileLogConfig {
   };
   consoleFormatter?: Formatter;
   dateFileFormatter?: Formatter;
+  /**
+   * If you want to use color, set this to true.
+   * This option only works for console appender.
+   * @default true in dev mode, and false in prod mode when the environment variable "DENO_ENV" is set to "production"
+   */
+  needColor?: boolean;
 }
 
 export type MyLogger = Logger & {

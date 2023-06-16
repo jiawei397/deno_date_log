@@ -18,6 +18,7 @@ const config: DateFileLogConfig = {
       "level": "WARNING",
     },
   },
+  // "needColor": true, // if you want to use color, set this to true, default is true in dev mode, false in prod mode when the environment variable "DENO_ENV" is set to "production"
 };
 
 initLog(config);

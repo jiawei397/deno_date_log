@@ -8,6 +8,7 @@ export {
 } from "https://deno.land/std@0.191.0/log/mod.ts";
 export {
   BaseHandler,
+  ConsoleHandler,
   WriterHandler,
 } from "https://deno.land/std@0.191.0/log/handlers.ts";
 export type { LogRecord } from "https://deno.land/std@0.191.0/log/logger.ts";
@@ -26,7 +27,9 @@ export { join } from "https://deno.land/std@0.191.0/path/mod.ts";
 export {
   bgYellow,
   blue,
+  bold,
   cyan,
   green,
+  red,
   yellow,
 } from "https://deno.land/std@0.191.0/fmt/colors.ts";
