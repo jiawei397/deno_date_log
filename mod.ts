@@ -4,4 +4,4 @@ export * from "./src/main.ts";
 
 export type { DateFileLogConfig, Formatter, LogAppender } from "./src/types.ts";
 
-export type { LogRecord } from "./deps.ts";
+export type { LevelName, LogRecord } from "./deps.ts";
