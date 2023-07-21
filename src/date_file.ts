@@ -22,6 +22,7 @@ export class DateFileHandler extends WriterHandler {
   protected _daysToKeep = 30;
   private originFileName = "";
   protected tomorrowDay = 0;
+  protected _flushTimeout = 1000; // 1s refresh once
 
   #unloadCallback() {
     this.destroy();
@@ -46,6 +47,9 @@ export class DateFileHandler extends WriterHandler {
     }
     if (options.daysToKeep) {
       this._daysToKeep = options.daysToKeep;
+    }
+    if (options.flushTimeout !== undefined) {
+      this._flushTimeout = options.flushTimeout;
     }
   }
 
@@ -141,6 +145,9 @@ export class DateFileHandler extends WriterHandler {
       this.flush();
     }
     this._buf.writeSync(this._encoder.encode(msg + "\n"));
+    setTimeout(() => {
+      this.flush();
+    }, this._flushTimeout);
   }
 
   log(msg: string): void {

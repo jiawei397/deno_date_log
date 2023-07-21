@@ -24,6 +24,7 @@ export interface FileHandlerOptions extends HandlerOptions {
 
   pattern?: string; // like : yyyy-MM-dd.log
   daysToKeep?: number;
+  flushTimeout?: number; // ms
 }
 
 export type Formatter = (logRecord: LogRecord) => string;
