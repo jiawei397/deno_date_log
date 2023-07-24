@@ -47,3 +47,9 @@ logger2.error("error2");
 ```
 
 Then will generate a log named like `deno.2023-06-16.log` in logs dir.
+
+If you may not want to print colors, there are three ways:
+
+1. Set env `DENO_ENV` to `production`
+2. Set env `NO_COLOR` to `true`
+3. Set config `needColor` to `false`
