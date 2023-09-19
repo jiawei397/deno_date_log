@@ -15,10 +15,6 @@ import {
   MyLogger,
 } from "./types.ts";
 
-export function isDist() {
-  return Deno.env.get("DENO_ENV") === "production";
-}
-
 export const getFormatter = function (needColor: boolean) {
   return function (logRecord: LogRecord) {
     const t1 = dateToString("yyyy-MM-dd hh:mm:ss", new Date());
@@ -43,7 +39,7 @@ export function initLog(config: DateFileLogConfig) {
 
     if (appenders.includes("console")) {
       if (!handlers.console) {
-        const needColor = config.needColor ?? !isDist();
+        const needColor = config.needColor ?? true;
         const formatter = config.consoleFormatter ||
           getFormatter(needColor);
         handlers.console = new MyConsoleHandler(level, {

@@ -3,7 +3,6 @@
   "name": "date_log",
   "tasks": {
     "dev": "deno run  --allow-read --allow-write --allow-env example.ts",
-    "pro": "DENO_ENV=production deno run  --allow-read --allow-write --allow-env example.ts",
-    "pro2": "NO_COLOR=true deno run  --allow-read --allow-write --allow-env example.ts"
+    "pro": "NO_COLOR=true deno run  --allow-read --allow-write --allow-env example.ts"
   }
 }
