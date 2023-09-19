@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "name": "date_log",
   "tasks": {
     "dev": "deno run  --allow-read --allow-write --allow-env example.ts",
