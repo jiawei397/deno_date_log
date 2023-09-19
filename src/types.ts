@@ -42,9 +42,9 @@ export interface DateFileLogConfig {
   consoleFormatter?: Formatter;
   dateFileFormatter?: Formatter;
   /**
-   * If you want to use color, set this to true.
+   * If you want to disable color, set this to false.
    * This option only works for console appender.
-   * @default true in dev mode, and false in prod mode when the environment variable "DENO_ENV" is set to "production"
+   * @default true
    */
   needColor?: boolean;
 }
