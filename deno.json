@@ -1,8 +1,17 @@
 {
   "version": "1.1.1",
-  "name": "date_log",
+  "name": "@jw397/date-log",
+  "exports": "./mod.ts",
+  "license": "MIT",
   "tasks": {
     "dev": "deno run  --allow-read --allow-write --allow-env example.ts",
     "pro": "NO_COLOR=true deno run  --allow-read --allow-write --allow-env example.ts"
+  },
+  "imports": {
+    "@std/fmt": "jsr:@std/fmt@^1.0.3",
+    "@std/fs": "jsr:@std/fs@^1.0.5",
+    "@std/io": "jsr:@std/io@^0.225.0",
+    "@std/log": "jsr:@std/log@^0.224.9",
+    "@std/path": "jsr:@std/path@^1.0.7"
   }
 }

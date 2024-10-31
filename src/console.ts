@@ -1,14 +1,11 @@
+import { blue, bold, red, yellow } from "@std/fmt/colors";
 import {
   BaseHandler,
-  blue,
-  bold,
-  HandlerOptions,
-  LevelName,
   LogLevels,
-  LogRecord,
-  red,
-  yellow,
-} from "../deps.ts";
+  type BaseHandlerOptions,
+  type LevelName,
+  type LogRecord,
+} from "@std/log";
 
 /**
  * This is the default logger. It will output color coded log messages to the
@@ -17,7 +14,7 @@ import {
 export class MyConsoleHandler extends BaseHandler {
   needColor: boolean;
 
-  constructor(levelName: LevelName, options: HandlerOptions & {
+  constructor(levelName: LevelName, options: BaseHandlerOptions & {
     needColor?: boolean;
   } = {}) {
     super(levelName, options);
@@ -33,7 +30,7 @@ export class MyConsoleHandler extends BaseHandler {
       case LogLevels.INFO:
         msg = blue(msg);
         break;
-      case LogLevels.WARNING:
+      case LogLevels.WARN:
         msg = yellow(msg);
         break;
       case LogLevels.ERROR:

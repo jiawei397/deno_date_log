@@ -1,44 +1,59 @@
 import {
-  BufWriterSync,
-  dateToString,
-  join,
-  LevelName,
+  BaseHandler,
+  type LevelName,
   LogLevels,
-  LogMode,
-  LogRecord,
-  WriterHandler,
-} from "../deps.ts";
-import { FileHandlerOptions } from "./types.ts";
-import { expireDate, mkdirSync } from "./utils.ts";
+  type LogRecord,
+} from "@std/log";
+import { ensureDirSync } from "@std/fs";
+import { join } from "@std/path";
+import { writeAllSync } from "@std/io/write-all";
+import {
+  bufSymbol,
+  encoderSymbol,
+  filenameSymbol,
+  fileSymbol,
+  modeSymbol,
+  openOptionsSymbol,
+  pointerSymbol,
+} from "./_date_file_handler_symbols.ts";
+import { expireDate } from "./utils.ts";
+import type { DateFileHandlerOptions } from "./types.ts";
+import { dateToString } from "./date_format.ts";
 
-export class DateFileHandler extends WriterHandler {
-  protected _file: Deno.FsFile | undefined;
-  protected _buf!: BufWriterSync;
-  protected _mode: LogMode;
-  protected _openOptions: Deno.OpenOptions;
-  protected _encoder = new TextEncoder();
+export type LogMode = "a" | "w" | "x";
 
+export class DateFileHandler extends BaseHandler {
   protected _pattern = "yyyy-MM-dd.log";
   protected _daysToKeep = 30;
   private originFileName = "";
   protected tomorrowDay = 0;
   protected _flushTimeout = 1000; // 1s refresh once
 
-  #unloadCallback() {
+  [fileSymbol]: Deno.FsFile | undefined;
+  [bufSymbol]: Uint8Array;
+  [pointerSymbol] = 0;
+  [filenameSymbol]: string;
+  [modeSymbol]: LogMode;
+  [openOptionsSymbol]: Deno.OpenOptions;
+  [encoderSymbol]: TextEncoder = new TextEncoder();
+  #unloadCallback = (() => {
     this.destroy();
-  }
+  }).bind(this);
 
-  constructor(levelName: LevelName, options: FileHandlerOptions) {
+  constructor(levelName: LevelName, options: DateFileHandlerOptions) {
     super(levelName, options);
+
+    this[filenameSymbol] = options.filename;
     // default to append mode, write only
-    this._mode = options.mode ? options.mode : "a";
-    this._openOptions = {
-      createNew: this._mode === "x",
-      create: this._mode !== "x",
-      append: this._mode === "a",
-      truncate: this._mode !== "a",
+    this[modeSymbol] = options.mode ?? "a";
+    this[openOptionsSymbol] = {
+      createNew: this[modeSymbol] === "x",
+      create: this[modeSymbol] !== "x",
+      append: this[modeSymbol] === "a",
+      truncate: this[modeSymbol] !== "a",
       write: true,
     };
+    this[bufSymbol] = new Uint8Array(options.bufferSize ?? 4096);
 
     this.originFileName = options.filename;
 
@@ -53,7 +68,7 @@ export class DateFileHandler extends WriterHandler {
     }
   }
 
-  getTomorrow() {
+  private getTomorrow() {
     const now = new Date();
     now.setHours(0);
     now.setMinutes(0);
@@ -63,11 +78,11 @@ export class DateFileHandler extends WriterHandler {
   }
 
   private init() {
-    this.mkdirAndremoveExpiredFiles();
+    this.mkdirAndRemoveExpiredFiles();
     this.setupBuf();
   }
 
-  private mkdirAndremoveExpiredFiles() {
+  private mkdirAndRemoveExpiredFiles() {
     this.tomorrowDay = this.getTomorrow();
     let name = this.originFileName;
     let dir = "./";
@@ -75,7 +90,7 @@ export class DateFileHandler extends WriterHandler {
       const arr = name.split("/");
       name = arr.pop()!;
       dir = arr.join("/");
-      mkdirSync(dir);
+      ensureDirSync(dir);
     }
 
     // remove expired files
@@ -107,18 +122,44 @@ export class DateFileHandler extends WriterHandler {
   }
 
   private setupBuf() {
-    const filename = this.getFilenameByDate(this.originFileName);
-    this._file = Deno.openSync(filename, this._openOptions);
-    this._writer = this._file;
-    this._buf = new BufWriterSync(this._file);
+    this[filenameSymbol] = this.getFilenameByDate(this.originFileName);
+    this[fileSymbol] = Deno.openSync(
+      this[filenameSymbol],
+      this[openOptionsSymbol],
+    );
+    this.#resetBuffer();
   }
 
-  setup() {
+  override setup() {
+    this[filenameSymbol] = this.getFilenameByDate(this.originFileName);
     this.init();
     addEventListener("unload", this.#unloadCallback.bind(this));
   }
 
-  handle(logRecord: LogRecord): void {
+  flush() {
+    if (this[pointerSymbol] > 0 && this[fileSymbol]) {
+      let written = 0;
+      while (written < this[pointerSymbol]) {
+        written += this[fileSymbol].writeSync(
+          this[bufSymbol].subarray(written, this[pointerSymbol]),
+        );
+      }
+      this.#resetBuffer();
+    }
+  }
+
+  #resetBuffer() {
+    this[pointerSymbol] = 0;
+  }
+
+  override destroy() {
+    this.flush();
+    this[fileSymbol]?.close();
+    this[fileSymbol] = undefined;
+    removeEventListener("unload", this.#unloadCallback);
+  }
+
+  override handle(logRecord: LogRecord) {
     super.handle(logRecord);
 
     // Immediately flush if log level is higher than ERROR
@@ -127,24 +168,17 @@ export class DateFileHandler extends WriterHandler {
     }
   }
 
-  flush(): void {
-    if (this._buf?.buffered() > 0) {
-      this._buf.flush();
-    }
-  }
-
-  destroy() {
-    this.flush();
-    this._file?.close();
-    this._file = undefined;
-    removeEventListener("unload", this.#unloadCallback);
-  }
-
   private _log(msg: string): void {
-    if (this._encoder.encode(msg).byteLength + 1 > this._buf.available()) {
+    const bytes = this[encoderSymbol].encode(msg + "\n");
+    if (bytes.byteLength > this[bufSymbol].byteLength - this[pointerSymbol]) {
       this.flush();
     }
-    this._buf.writeSync(this._encoder.encode(msg + "\n"));
+    if (bytes.byteLength > this[bufSymbol].byteLength) {
+      writeAllSync(this[fileSymbol]!, bytes);
+    } else {
+      this[bufSymbol].set(bytes, this[pointerSymbol]);
+      this[pointerSymbol] += bytes.byteLength;
+    }
     setTimeout(() => {
       this.flush();
     }, this._flushTimeout);
