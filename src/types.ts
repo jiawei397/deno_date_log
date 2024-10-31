@@ -30,7 +30,7 @@ export interface FileHandlerOptions extends HandlerOptions {
 export type Formatter = (logRecord: LogRecord) => string;
 
 export interface DateFileLogConfig {
-  appenders: {
+  appenders?: {
     dateFile: FileHandlerOptions;
   };
   categories: {

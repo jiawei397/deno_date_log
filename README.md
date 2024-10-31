@@ -27,8 +27,12 @@ const config: DateFileLogConfig = {
       "appenders": ["console", "dateFile"],
       "level": "DEBUG",
     },
+    "task": {
+      "appenders": ["console", "dateFile"],
+      "level": "WARNING",
+    },
   },
-  // "needColor": true, 
+  // "needColor": true,
 };
 
 await initLog(config);
