@@ -4,6 +4,5 @@
     "https://deno.land": true
   },
   "deno.config": "deno.json",
-  "deno.lint": true,
-  "deno.suggest.autoImports": true
+  "deno.lint": true
 }
