@@ -1,22 +1,14 @@
-import {
-  cyan,
-  dateToString,
-  getLoggerOrigin,
-  LevelName,
-  LogRecord,
-  setup,
-} from "../deps.ts";
+import { cyan } from "@std/fmt/colors";
+import { type LevelName, type LogRecord, setup } from "@std/log";
+import { dateToString } from "./date_format.ts";
 import { MyConsoleHandler } from "./console.ts";
 import { DateFileHandler } from "./date_file.ts";
-import {
-  DateFileLogConfig,
-  LogHandlers,
-  LogLoggers,
-  MyLogger,
-} from "./types.ts";
+import type { DateFileLogConfig, LogHandlers, LogLoggers } from "./types.ts";
 
-export const getFormatter = function (needColor: boolean) {
-  return function (logRecord: LogRecord) {
+export const getFormatter = function (
+  needColor: boolean,
+): (logRecord: LogRecord) => string {
+  return function (logRecord) {
     const t1 = dateToString("yyyy-MM-dd hh:mm:ss", new Date());
     let msg = `${needColor ? cyan(t1) : t1} [${logRecord.levelName}] - `;
     if (logRecord.args.length > 0) {
@@ -31,7 +23,7 @@ export const getFormatter = function (needColor: boolean) {
   };
 };
 
-export function initLog(config: DateFileLogConfig) {
+export function initLog(config: DateFileLogConfig): void {
   const loggers: LogLoggers = {};
   const handlers: LogHandlers = {};
   Object.keys(config.categories).forEach((key: string) => {
@@ -67,10 +59,4 @@ export function initLog(config: DateFileLogConfig) {
     handlers,
     loggers,
   });
-}
-
-export function getLogger(name?: string): MyLogger {
-  const logger = getLoggerOrigin(name) as MyLogger;
-  logger.warn = logger.warning;
-  return logger;
 }

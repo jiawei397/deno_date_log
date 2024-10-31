@@ -1,12 +1,11 @@
-import {
+import type {
   BaseHandler,
-  HandlerOptions,
+  BaseHandlerOptions,
   LevelName,
-  Logger,
   LoggerConfig,
   LogMode,
   LogRecord,
-} from "../deps.ts";
+} from "@std/log";
 
 export type LogAppender = "console" | "dateFile";
 
@@ -18,20 +17,29 @@ export interface LogHandlers {
   [name: string]: BaseHandler;
 }
 
-export interface FileHandlerOptions extends HandlerOptions {
+export type DateFileHandlerOptions = BaseHandlerOptions & {
   filename: string;
+  /**
+   * @default {"a"}
+   */
   mode?: LogMode;
+  /**
+   * Buffer size for writing log messages to file, in bytes.
+   *
+   * @default {4096}
+   */
+  bufferSize?: number;
 
   pattern?: string; // like : yyyy-MM-dd.log
   daysToKeep?: number;
   flushTimeout?: number; // ms
-}
+};
 
 export type Formatter = (logRecord: LogRecord) => string;
 
 export interface DateFileLogConfig {
   appenders?: {
-    dateFile: FileHandlerOptions;
+    dateFile: DateFileHandlerOptions;
   };
   categories: {
     [key: string]: {
@@ -48,7 +56,3 @@ export interface DateFileLogConfig {
    */
   needColor?: boolean;
 }
-
-export type MyLogger = Logger & {
-  warn: (...msg: unknown[]) => unknown;
-};
